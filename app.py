@@ -75,7 +75,6 @@ def get_temps():
         }
         for sensor_data in temp_history
     ]
-    print(f"returning {len(traces)} traces")
     return jsonify(traces)
 
 
@@ -129,13 +128,14 @@ def clear_logs():
 
 if __name__ == '__main__':
 
-    if USE_MOCK:
+    if not USE_MOCK:
         os.system('modprobe w1-gpio')
         os.system('modprobe w1-therm')
 
         W1_DIR = "/sys/bus/w1/devices"
         SENSORS = find_w1_devices(W1_DIR)
     else:
+        print("USING MOCK SEBSORS")
         SENSORS = ["MOCK1", "MOCK2"]
 
     temp_history = [deque(maxlen=max_points) for _ in SENSORS]
