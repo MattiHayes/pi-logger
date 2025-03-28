@@ -3,7 +3,7 @@ import threading
 import time
 import os
 from pathlib import Path
-from logger import find_w1_devices, read_temp
+from logger import find_w1_temp_sensors, read_temp
 from collections import deque
 
 import logging
@@ -150,7 +150,7 @@ if __name__ == '__main__':
         os.system('modprobe w1-therm')
 
         W1_DIR = "/sys/bus/w1/devices"
-        SENSORS = find_w1_devices(W1_DIR)
+        SENSORS = find_w1_temp_sensors(W1_DIR)
     else:
         print("USING MOCK SEBSORS")
         SENSORS = ["MOCK1", "MOCK2"]
@@ -159,4 +159,4 @@ if __name__ == '__main__':
 
     app.logger.debug(f"Found {len(SENSORS)} temperature sensors.")
 
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)

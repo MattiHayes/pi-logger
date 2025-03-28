@@ -38,7 +38,7 @@ def read_temp(device_file: str) -> float:
     logger.error(f"Failed to read temp sensor: {device_file}")
     return None
 
-def find_w1_devices(w1_dir: str) -> list[str]:
+def find_w1_temp_sensors(w1_dir: str) -> list[str]:
     device_folder = glob.glob(w1_dir + "/28*")
 
     devices = device_folder
@@ -54,7 +54,7 @@ def main():
     w1_dir = "/sys/bus/w1/devices"
     # find devices -- only select one for now
     
-    devices = find_w1_devices(w1_dir)
+    devices = find_w1_temp_sensors(w1_dir)
 
     logging_file = f"log_{time.time()}.csv"
     sample_time = eval(input("Input the sample time [sec]: ")) 
