@@ -1,7 +1,7 @@
 import os
 import glob
 import time
-
+import random
 
 def read_temp_raw(device_file: str) -> list[str]:
     try:
@@ -14,6 +14,10 @@ def read_temp_raw(device_file: str) -> list[str]:
         return ["NO"]
 
 def read_temp(device_file: str) -> float:
+
+    if device_file.startswith("MOCK"):
+        return round(random.uniform(20, 25), 2)
+
     lines = read_temp_raw(device_file)
 
     read_status = lines[0].split()[-1]

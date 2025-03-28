@@ -8,7 +8,7 @@ from collections import deque
 
 app = Flask(__name__)
 
-LOG_DIR = Path("/home/daf/temp-logger/logs")
+LOG_DIR = Path("/home/temp-logger/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE = None
@@ -18,6 +18,8 @@ SENSORS = []
 
 max_points = 120
 temp_history = []
+
+USE_MOCK = os.getenv("USE_MOCK_SENSORS", "false").lower() == "true"
 
 def run_program(sample_time: float) -> None:
     global stop_flag, LOG_FILE, temps
@@ -55,8 +57,8 @@ def run_program(sample_time: float) -> None:
 
 @app.route('/')
 def index():
-    # print("📄 Loading home page...")
-    # print(f"➡️  Sensor count: {len(SENSORS)}")
+    # print("Loading home page...")
+    # print(f"Sensor count: {len(SENSORS)}")
     return render_template(
         'index.html',
         show_download=False,
@@ -126,11 +128,15 @@ def clear_logs():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    os.system('modprobe w1-gpio')
-    os.system('modprobe w1-therm')
 
-    W1_DIR = "/sys/bus/w1/devices"
-    SENSORS = find_w1_devices(W1_DIR)
+    if USE_MOCK:
+        os.system('modprobe w1-gpio')
+        os.system('modprobe w1-therm')
+
+        W1_DIR = "/sys/bus/w1/devices"
+        SENSORS = find_w1_devices(W1_DIR)
+    else:
+        SENSORS = ["MOCK1", "MOCK2"]
 
     temp_history = [deque(maxlen=max_points) for _ in SENSORS]
 
