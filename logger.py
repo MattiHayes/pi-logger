@@ -2,6 +2,14 @@ import os
 import glob
 import time
 import random
+import logging
+
+logging.basicConfig(
+    filename='/app/logs/temp_sensors/log',
+    format="%{asctime}s : %{loglevel}s : %{message}s"
+    )
+
+logger = logging.getLogger(__name__)
 
 def read_temp_raw(device_file: str) -> list[str]:
     try:
@@ -10,12 +18,13 @@ def read_temp_raw(device_file: str) -> list[str]:
         f.close()
         return lines
     except FileNotFoundError:
-        print("Could not find the device file.")
+        logger.error(f"Could not find the device file: {device_file}.")
         return ["NO"]
 
 def read_temp(device_file: str) -> float:
 
     if device_file.startswith("MOCK"):
+        logger.info("Using mock sensors.")
         return round(random.uniform(20, 25), 2)
 
     lines = read_temp_raw(device_file)
@@ -26,7 +35,7 @@ def read_temp(device_file: str) -> float:
         raw_temp = lines[1].split()[-1]
         temp = int(raw_temp.strip("t="))/1000
         return temp
-    
+    logger.error(f"Failed to read temp sensor: {device_file}")
     return None
 
 def find_w1_devices(w1_dir: str) -> list[str]:
@@ -50,7 +59,8 @@ def main():
     logging_file = f"log_{time.time()}.csv"
     sample_time = eval(input("Input the sample time [sec]: ")) 
 
-    print(devices)
+    logger.info(f"Found temp sensors {devices}")
+
     with open(logging_file, 'w') as f:
 
         # set up the column names for the csv file
@@ -67,8 +77,6 @@ def main():
                 f.write(f",{temp}")
             f.write('\n')
             time.sleep(sample_time)
-
-# TODO: write a gracefil exit to close f when ctrl+c
 
 if __name__ == "__main__":
     main()    

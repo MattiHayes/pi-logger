@@ -6,7 +6,18 @@ from pathlib import Path
 from logger import find_w1_devices, read_temp
 from collections import deque
 
+import logging
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.INFO)
+
+file_handler = logging.FileHandler('/app/logs/flask.log')
+log.addHandler(file_handler)
+
 app = Flask(__name__)
+app.logger.addHandler(file_handler)
+
+
 
 LOG_DIR = Path("/data/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -33,10 +44,10 @@ def run_program(sample_time: float) -> None:
             f.write(f",Temp {i+1}")
         f.write('\n')
 
-    print(f"Starting logging with sample time of {sample_time} seconds.")
+    app.logger.debug(f"Starting logging with sample time of {sample_time} seconds.")
 
     if sample_time < 0:
-        print("Can't do negative time.")
+        app.logger.warning("Can't do negative time.")
         return
     
     while not stop_flag:
@@ -53,12 +64,12 @@ def run_program(sample_time: float) -> None:
             
         time.sleep(sample_time)
     
-    print("Program stopped.")
+    app.logger.debug("Program stopped.")
 
 @app.route('/')
 def index():
-    # print("Loading home page...")
-    # print(f"Sensor count: {len(SENSORS)}")
+    app.logger.debug("Loading home page...")
+    app.logger.debug(f"Sensor count: {len(SENSORS)}")
     return render_template(
         'index.html',
         show_download=False,
@@ -140,6 +151,6 @@ if __name__ == '__main__':
 
     temp_history = [deque(maxlen=max_points) for _ in SENSORS]
 
-    print(f"Found {len(SENSORS)} temperature sensors.")
+    app.logger.debug(f"Found {len(SENSORS)} temperature sensors.")
 
     app.run(host='0.0.0.0', port=5000)
