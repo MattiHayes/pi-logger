@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Temperature Logger</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body class="p-5">
+
+  <div class="container">
+    <!-- Title -->
+    <h1 class="mb-4">Temperature Logger</h1>
+
+    
+
+    <!-- Sensor Count -->
+    <div class="mb-3">
+      <strong>🌡 Temp Sensors:</strong>
+      {% if sensor_count > 0 %}
+        <span class="badge bg-info text-dark">{{ sensor_count }}</span>
+      {% else %}
+        <span class="badge bg-danger">No Sensors Found</span>
+      {% endif %}
+
+      {% if running %}
+        <span class="badge bg-success">● Logging</span>
+      {% else %}
+        <span class="badge bg-secondary">● Stopped</span>
+      {% endif %}
+
+    </div>
+
+    <!-- Sample Time Input (Visible) -->
+    <div class="mb-3">
+      <label for="sample_time" class="form-label">Sample Time (seconds):</label>
+      <input type="number" id="sample_time" class="form-control" required>
+    </div>
+
+    <!-- Button Grid -->
+    <div class="row g-2 mb-4">
+
+      <!-- Start button shown only when not running -->
+      {% if not running %}
+      <div class="col-6 col-md-3">
+        <form method="POST" action="/start" onsubmit="syncSampleTime()">
+          <input type="hidden" name="sample_time" id="sample_time_hidden">
+          <button type="submit" class="btn btn-primary w-100">Start</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- Stop Button -->
+      {% if running %}
+      <div class="col-6 col-md-3">
+        <form method="POST" action="/stop">
+          <button type="submit" class="btn btn-danger w-100">Stop</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- Clear Button -->
+      <div class="col-6 col-md-3">
+        <form method="POST" action="/clear_logs">
+          <button type="submit" class="btn btn-outline-danger w-100">Clear</button>
+        </form>
+      </div>
+
+      <!-- Download Button -->
+      {% if show_download %}
+      <div class="col-6 col-md-3">
+        <a href="/download" class="btn btn-success w-100">Download</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Temperature Readout Section -->
+    <div class="mt-5">
+      <h4>Temperature Readings</h4>
+      <ul class="list-group" id="temp-list">
+      </ul>
+    </div>
+
+    <div class="mt-5">
+      <h4>Live Temperature Plot</h4>
+      <div id="tempPlot" style="height:400px;"></div>
+    </div>
+
+  </div>
+
+  <!-- Script to sync sample time input -->
+
+
+  <script>
+
+    const visibleInput = document.getElementById('sample_time');
+    const hiddenInput = document.getElementById('sample_time_hidden');
+
+    function syncSampleTime() {
+      if (visibleInput && hiddenInput) {
+        hiddenInput.value = visibleInput.value;
+      }
+    }
+
+    if (visibleInput && hiddenInput) {
+      // Keep hidden input updated in real time (optional)
+      visibleInput.addEventListener('input', () => {
+        hiddenInput.value = visibleInput.value;
+      });
+
+      // Initialize just in case
+      hiddenInput.value = visibleInput.value;
+    }
+
+  
+    // Temperature list updater
+    function fetchTemps() {
+      // console.log("📡 fetchTemps() running...");
+      fetch('/temps')
+        .then(response => response.json())
+        .then(data => {
+          // console.log("📈 Got data:", data);
+          const list = document.getElementById('temp-list');
+          if (!list) return;
+
+          list.innerHTML = '';
+
+          if (data.length === 0 || data[0].y.length === 0) {
+            const item = document.createElement('li');
+            item.className = 'list-group-item text-muted';
+            item.textContent = 'Waiting for data...';
+            list.appendChild(item);
+            return; 
+          }
+
+          data.forEach((trace, index) => {
+            const item = document.createElement('li');
+            item.className = 'list-group-item';
+            item.textContent = `Temperature ${index + 1}: ${trace.y.at(-1)}°C`;
+            list.appendChild(item);
+          });
+
+          // Only now update the plot
+          updatePlot(data);
+        })
+        .catch(err => console.error('Error fetching temperatures:', err));
+    }
+
+    // -- Plotly set up
+    const sensorCount = parseInt("{{ sensor_count | default(0) }}", 10);
+    const maxPoints = 120;
+    const plotDiv = document.getElementById('tempPlot');
+
+    const traces = Array.from({ length: sensorCount }, (_, i) => ({
+      x: [],
+      y: [],
+      mode: 'lines',
+      name: `Sensor ${i + 1}`,
+      line: {
+        width: 2,
+        color: `hsl(${(i * 60) % 360}, 70%, 50%)`
+      }
+    }));
+
+    if (plotDiv) {
+      Plotly.newPlot(plotDiv, traces, {
+        title: 'Temperatures',
+        xaxis: { title: 'time' },
+        yaxis: { title: 'temperature [°C]', range: [0, 60] },
+        legend: { orientation: 'h'},
+      },
+    );
+    }
+
+    function updatePlot(tracesData) {
+      if (!tracesData || tracesData.length === 0 || !tracesData[0].x.length) return;
+
+      tracesData.forEach((trace, i) => {
+        Plotly.update(plotDiv, {
+          x: [trace.x],
+          y: [trace.y]
+        }, {}, [i]);
+      });
+    }
+      
+    const isRunning = "{{ 'true' if running else 'false' }}" === 'true';
+
+    fetchTemps();
+
+    if (isRunning) {
+      setInterval(fetchTemps, 2000);
+    }
+
+  </script>
+
+</body>
+</html>
