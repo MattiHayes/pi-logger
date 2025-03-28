@@ -5,8 +5,8 @@ import random
 import logging
 
 logging.basicConfig(
-    filename='/app/logs/temp_sensors/log',
-    format="%{asctime}s : %{loglevel}s : %{message}s"
+    filename='/app/temp_sensors.log',
+    format="%(asctime)s : [%(levelname)s] : %(message)s"
     )
 
 logger = logging.getLogger(__name__)

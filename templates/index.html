@@ -63,7 +63,7 @@
       <!-- Clear Button -->
       <div class="col-6 col-md-3">
         <form method="POST" action="/clear_logs">
-          <button type="submit" class="btn btn-outline-danger w-100">Clear</button>
+          <button type="submit" class="btn btn-outline-danger w-100">Clear Logs</button>
         </form>
       </div>
 
@@ -85,6 +85,12 @@
     <div class="mt-5">
       <h4>Live Temperature Plot</h4>
       <div id="tempPlot" style="height:400px;"></div>
+    </div>
+
+    <!-- Reset Plot button-->
+    <div class="col-6 col-md-3">
+        <a href="/reset-plot" class="btn btn-success w-100">Reset Plot</a>
+        </div>
     </div>
 
   </div>
@@ -166,7 +172,7 @@
     if (plotDiv) {
       Plotly.newPlot(plotDiv, traces, {
         title: 'Temperatures',
-        xaxis: { title: 'time' },
+        xaxis: { title: 'time', type: 'date', tickformat: '%H:%M:%S'},
         yaxis: { title: 'temperature [°C]', range: [0, 60] },
         legend: { orientation: 'h'},
       },
@@ -174,16 +180,25 @@
     }
 
     function updatePlot(tracesData) {
-      if (!tracesData || tracesData.length === 0 || !tracesData[0].x.length) return;
-
       tracesData.forEach((trace, i) => {
+        const maxPoints = 60;
+
+        // Limit number of points on the client side
+        let x = trace.x;
+        let y = trace.y;
+
+        if (x.length > maxPoints) {
+          x = x.slice(-maxPoints);
+          y = y.slice(-maxPoints);
+        }
+
         Plotly.update(plotDiv, {
-          x: [trace.x],
-          y: [trace.y]
+          x: [x],
+          y: [y]
         }, {}, [i]);
       });
     }
-      
+          
     const isRunning = "{{ 'true' if running else 'false' }}" === 'true';
 
     fetchTemps();

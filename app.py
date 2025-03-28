@@ -11,7 +11,7 @@ import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.INFO)
 
-file_handler = logging.FileHandler('/app/logs/flask.log')
+file_handler = logging.FileHandler('/app/flask.log')
 log.addHandler(file_handler)
 
 app = Flask(__name__)
@@ -24,7 +24,7 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE = None
 program_thread = None
-stop_flag = False
+stop_flag = True
 SENSORS = []
 
 max_points = 120
@@ -32,10 +32,11 @@ temp_history = []
 
 USE_MOCK = os.getenv("USE_MOCK_SENSORS", "false").lower() == "true"
 
+# --------------------------------------------------------------------------------------------------
 def run_program(sample_time: float) -> None:
     global stop_flag, LOG_FILE, temps
 
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    timestamp = time.time()
     LOG_FILE = LOG_DIR / f"{timestamp}-temp-log.csv"
 
     with open(LOG_FILE, 'w') as f:
@@ -52,7 +53,7 @@ def run_program(sample_time: float) -> None:
     
     while not stop_flag:
         new_temps = []
-        timestamp = time.strftime("%H-%M-%S")
+        timestamp = time.strftime("%H:%M:%S")
         with open(LOG_FILE, 'a') as f:
             f.write(f"{time.time()}")
             for i, sensor in enumerate(SENSORS):
@@ -66,14 +67,18 @@ def run_program(sample_time: float) -> None:
     
     app.logger.debug("Program stopped.")
 
+# --------------------------------------------------------------------------------------------------
 @app.route('/')
 def index():
     app.logger.debug("Loading home page...")
     app.logger.debug(f"Sensor count: {len(SENSORS)}")
+
+    logs_to_download = len(os.listdir(LOG_DIR)) > 0
+
     return render_template(
         'index.html',
-        show_download=False,
-        running=False,
+        show_download=logs_to_download,
+        running= not stop_flag,
         sensor_count=len(SENSORS)
     )
 
@@ -103,12 +108,7 @@ def start():
     program_thread = threading.Thread(target=run_program, args=(sample_time,))
     program_thread.start()
 
-    return render_template(
-        'index.html',
-        show_download=True,
-        running=True,
-        sensor_count=len(SENSORS)
-    )
+    return redirect("/")
 
 @app.route('/stop', methods=['POST'])
 def stop():
@@ -118,12 +118,8 @@ def stop():
     if program_thread:
         program_thread.join()
 
-    return render_template(
-        'index.html',
-        show_download=True,
-        running=False,
-        sensor_count=len(SENSORS)
-    )
+    return redirect("/")
+
 
 @app.route('/download')
 def download():
@@ -131,12 +127,22 @@ def download():
         return send_file(str(LOG_FILE), as_attachment=True)
     return "No file available", 404
 
+@app.route('/reset-plot')
+def reset_plot():
+    global temp_history
+    for q in temp_history:
+        q.clear()
+    return redirect("/")
+
+
 @app.route('/clear_logs', methods=['POST'])
 def clear_logs():
     for file in LOG_DIR.glob('*.csv'):
         file.unlink()
-    return redirect(url_for('index'))
+    return redirect("/")
 
+
+# --------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
 
     if not USE_MOCK:

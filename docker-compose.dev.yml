@@ -2,10 +2,9 @@ version: "3.9"
 
 services:
   temp-logger:
-    image: ghcr.io/mattihayes/pi-logger:latest
+    image: ghcr.io/mattihayes/pi-logger:dev
     container_name: temp-logger
     ports:
       - "5001:5000"
     environment:
       - USE_MOCK_SENSORS=true
-    restart: always
