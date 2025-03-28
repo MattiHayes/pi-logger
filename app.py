@@ -8,7 +8,7 @@ from collections import deque
 
 app = Flask(__name__)
 
-LOG_DIR = Path("/home/temp-logger/logs")
+LOG_DIR = Path("/data/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE = None
