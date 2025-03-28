@@ -22,15 +22,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set lowercase owner
-        run: echo "REPO_OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
-        shell: bash
-        env:
-          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/pi-logger:latest
+          tags: ghcr.io/mattihayes/pi-logger:latest
