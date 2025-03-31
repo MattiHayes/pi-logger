@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   temp-logger:
-    image: ghcr.io/mattihayes/pi-logger:dev
+    image: test-image
     container_name: temp-logger
     ports:
       - "5001:5000"

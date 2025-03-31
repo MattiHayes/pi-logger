@@ -36,7 +36,7 @@ USE_MOCK = os.getenv("USE_MOCK_SENSORS", "false").lower() == "true"
 def run_program(sample_time: float) -> None:
     global stop_flag, LOG_FILE, temps
 
-    timestamp = time.time()
+    timestamp = time.strftime("%d%m%y-%H%M%S")
     LOG_FILE = LOG_DIR / f"{timestamp}-temp-log.csv"
 
     with open(LOG_FILE, 'w') as f:
@@ -53,7 +53,7 @@ def run_program(sample_time: float) -> None:
     
     while not stop_flag:
         new_temps = []
-        timestamp = time.strftime("%H:%M:%S")
+        timestamp = time.time()
         with open(LOG_FILE, 'a') as f:
             f.write(f"{time.time()}")
             for i, sensor in enumerate(SENSORS):
