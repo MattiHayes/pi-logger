@@ -42,4 +42,4 @@ jobs:
           context: .
           push: true
           platforms: linux/arm64
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/pi-logger:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/pi-logger:${{ github.ref_name }}
