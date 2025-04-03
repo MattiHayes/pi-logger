@@ -3,20 +3,22 @@ import threading
 import time
 import os
 from pathlib import Path
-from logger import find_w1_temp_sensors, read_temp
+from logger import find_w1_temp_sensors, read_temp, sensor_logger
 from collections import deque
 
 import logging
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.INFO)
+app = Flask(__name__)
+
+flask_logger = logging.getLogger('werkzeug')
+flask_logger.setLevel(logging.INFO)
+flask_logger.propagate = False
 
 file_handler = logging.FileHandler('/app/flask.log')
-log.addHandler(file_handler)
+file_handler.setFormatter(logging.Formatter("%(asctime)s : [%(levelname)s] : %(message)s"))
 
-app = Flask(__name__)
+flask_logger.addHandler(file_handler)
 app.logger.addHandler(file_handler)
-
 
 
 LOG_DIR = Path("/data/logs")
@@ -45,11 +47,12 @@ def run_program(sample_time: float) -> None:
             f.write(f",Temp {i+1}")
         f.write('\n')
 
-    app.logger.debug(f"Starting logging with sample time of {sample_time} seconds.")
 
     if sample_time < 0:
         app.logger.warning("Can't do negative time.")
         return
+    
+    sensor_logger.info(f"Starting logging with sample time of {sample_time} seconds.")
     
     while not stop_flag:
         new_temps = []
@@ -65,7 +68,7 @@ def run_program(sample_time: float) -> None:
             
         time.sleep(sample_time)
     
-    app.logger.debug("Program stopped.")
+    app.logger.info("Program stopped.")
 
 # --------------------------------------------------------------------------------------------------
 @app.route('/')
@@ -104,7 +107,7 @@ def start():
         sample_time = 1
 
     stop_flag = False
-
+    app.logger.info(f"Starting logging with sample time of {sample_time} seconds.")
     program_thread = threading.Thread(target=run_program, args=(sample_time,))
     program_thread.start()
 
@@ -124,12 +127,14 @@ def stop():
 @app.route('/download')
 def download():
     if LOG_FILE and LOG_FILE.exists():
+        app.logger.debug(f"Sent log file for download.")
         return send_file(str(LOG_FILE), as_attachment=True)
     return "No file available", 404
 
 @app.route('/reset-plot')
 def reset_plot():
     global temp_history
+    app.logger.debug(f"Resetting the plot.")
     for q in temp_history:
         q.clear()
     return redirect("/")
@@ -137,6 +142,7 @@ def reset_plot():
 
 @app.route('/clear_logs', methods=['POST'])
 def clear_logs():
+    app.logger.debug(f"Deleting all logs.")
     for file in LOG_DIR.glob('*.csv'):
         file.unlink()
     return redirect("/")

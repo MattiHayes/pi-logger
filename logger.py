@@ -4,12 +4,14 @@ import time
 import random
 import logging
 
-logging.basicConfig(
-    filename='/app/temp_sensors.log',
-    format="%(asctime)s : [%(levelname)s] : %(message)s"
-    )
+sensor_logger = logging.getLogger("sensor_logger")
+sensor_logger.setLevel(logging.INFO)
+sensor_logger.propagate = False 
 
-logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler("/app/temp_sensors.log")
+file_handler.setFormatter(logging.Formatter("%(asctime)s : [%(levelname)s] : %(message)s"))
+
+sensor_logger.addHandler(file_handler)
 
 def read_temp_raw(device_file: str) -> list[str]:
     try:
