@@ -33,4 +33,5 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/arm64,linux/amd64
           tags: ghcr.io/${{ env.REPO_OWNER_LC }}/pi-logger:latest
