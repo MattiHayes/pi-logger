@@ -33,4 +33,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/pi-logger:latest
+          tags: ghcr.io/${{ env.REPO_OWNER_LC }}/pi-logger:${{ github.ref_name }}
