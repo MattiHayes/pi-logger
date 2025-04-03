@@ -20,13 +20,13 @@ def read_temp_raw(device_file: str) -> list[str]:
         f.close()
         return lines
     except FileNotFoundError:
-        logger.error(f"Could not find the device file: {device_file}.")
+        sensor_logger.error(f"Could not find the device file: {device_file}.")
         return ["NO"]
 
 def read_temp(device_file: str) -> float:
 
     if device_file.startswith("MOCK"):
-        logger.info("Using mock sensors.")
+        sensor_logger.info("Using mock sensors.")
         return round(random.uniform(20, 25), 2)
 
     lines = read_temp_raw(device_file)
@@ -37,7 +37,7 @@ def read_temp(device_file: str) -> float:
         raw_temp = lines[1].split()[-1]
         temp = int(raw_temp.strip("t="))/1000
         return temp
-    logger.error(f"Failed to read temp sensor: {device_file}")
+    sensor_logger.error(f"Failed to read temp sensor: {device_file}")
     return None
 
 def find_w1_temp_sensors(w1_dir: str) -> list[str]:
@@ -61,7 +61,7 @@ def main():
     logging_file = f"log_{time.time()}.csv"
     sample_time = eval(input("Input the sample time [sec]: ")) 
 
-    logger.info(f"Found temp sensors {devices}")
+    sensor_logger.info(f"Found temp sensors {devices}")
 
     with open(logging_file, 'w') as f:
 

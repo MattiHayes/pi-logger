@@ -11,7 +11,7 @@ import logging
 app = Flask(__name__)
 
 flask_logger = logging.getLogger('werkzeug')
-flask_logger.setLevel(logging.INFO)
+flask_logger.setLevel(logging.DEBUG)
 flask_logger.propagate = False
 
 file_handler = logging.FileHandler('/app/flask.log')
@@ -55,6 +55,7 @@ def run_program(sample_time: float) -> None:
     sensor_logger.info(f"Starting logging with sample time of {sample_time} seconds.")
     
     while not stop_flag:
+        start_time = time.time()
         new_temps = []
         timestamp = time.time()
         with open(LOG_FILE, 'a') as f:
@@ -65,8 +66,9 @@ def run_program(sample_time: float) -> None:
                 f.write(f",{temp}")
                 temp_history[i].append((timestamp, temp))
             f.write('\n')
-            
-        time.sleep(sample_time)
+        elapsed = time.time() - start_time
+        flask_logger.debug(f"Loop time: {elapsed:.3f}")
+        time.sleep(max(0, sample_time - elapsed))
     
     app.logger.info("Program stopped.")
 
